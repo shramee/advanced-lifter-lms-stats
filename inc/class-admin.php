@@ -80,4 +80,27 @@ class Lifter_LMS_Stats_Admin {
 		wp_enqueue_style( $token . '-css', $url . '/assets/admin.css' );
 		wp_enqueue_script( $token . '-js', $url . '/assets/admin.js', array( 'jquery' ) );
 	}
+
+	function user_fields( $user ) {
+		?>
+		<h2 id="paypal-info"><?php _e("Paypal information", "blank"); ?></h2>
+
+		<table class="form-table">
+		<tr>
+			<th><label for="paypal_acc"><?php _e("Paypal Account"); ?></label></th>
+			<td>
+				<input type="text" name="paypal_acc" id="paypal_acc" value="<?php echo esc_attr( get_the_author_meta( 'paypal_acc', $user->ID ) ); ?>" class="regular-text" /><br />
+				<span class="description"><?php _e("Please enter your paypal account email."); ?></span>
+			</td>
+		</tr>
+		</table>
+		<?php
+	}
+
+	function save_user_fields( $user_id ) {
+		if ( !current_user_can( 'edit_user', $user_id ) ) {
+			return false;
+		}
+		update_user_meta( $user_id, 'paypal_acc', $_POST['paypal_acc'] );
+	}
 }

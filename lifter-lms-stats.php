@@ -79,6 +79,9 @@ class Lifter_LMS_Stats{
 
 		$this->_admin(); //Initiate admin
 
+		//Enqueue admin end JS and CSS
+		add_action( 'wp_enqueue_scripts',	[ $this, 'log_page_views' ] );
+
 	}
 
 	/**
@@ -89,10 +92,31 @@ class Lifter_LMS_Stats{
 		$this->admin = Lifter_LMS_Stats_Admin::instance();
 
 		//Enqueue admin end JS and CSS
-		add_action( 'admin_enqueue_scripts',	array( $this->admin, 'enqueue' ) );
+		add_action( 'admin_enqueue_scripts',	[ $this->admin, 'enqueue' ] );
 		// Register widgets
-		add_action( 'wp_dashboard_setup', array( $this->admin, 'wp_dashboard_setup' ) );
+		add_action( 'wp_dashboard_setup', [ $this->admin, 'wp_dashboard_setup' ] );
+		// Add custom user fields for paypal etc.
+		add_action( 'show_user_profile', [ $this->admin, 'user_fields' ] );
+		add_action( 'edit_user_profile', [ $this->admin, 'user_fields' ] );
 
+		// Save extra fields
+		add_action( 'personal_options_update', [ $this->admin, 'save_user_fields' ] );
+		add_action( 'edit_user_profile_update', [ $this->admin, 'save_user_fields' ] );
+
+	}
+
+	public function increment_option( $id ) {
+		$val = get_option( $id, 0 );
+		if ( ! $val ) {
+			$val = 0;
+		}
+		$val ++;
+		update_option( $id, $val, 'no' );
+	}
+
+	public function log_page_views() {
+		//@TODO Dynamically generate options by user course and date.
+		$this->increment_option( 'llmss-' );
 	}
 }
 

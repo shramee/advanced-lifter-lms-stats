@@ -1,0 +1,21 @@
+/**
+ * Plugin front end styles
+ *
+ * @package Lifter_LMS_Stats
+ * @version 1.0.0
+ */
+
+#lifter-lms-stats {
+	table {
+		width: 100%;
+		border-spacing: 0;
+		border-collapse: collapse;
+		margin: 1em auto;
+	}
+
+	th, td {
+		margin: 0;
+		padding: 0.5em 1em;
+		border: 1px solid #ccc;
+	}
+}

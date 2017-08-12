@@ -6,6 +6,9 @@
  */
 jQuery(function ($) {
 
-    //Put all jquery code in here
+	var
+		$widget = $( '#lifter-lms-stats' );
+
+	$('#dashboard-widgets').prepend( $widget )
 
 });
