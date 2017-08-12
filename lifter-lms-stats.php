@@ -11,8 +11,13 @@ Author URI: http://shramee.com/
 
 /** Plugin admin class */
 require 'inc/class-admin.php';
-/** Plugin public class */
-require 'inc/class-public.php';
+/** Admin widget class */
+require 'inc/class-widget-admin.php';
+/** Author widget class */
+require 'inc/class-widget-author.php';
+
+define( 'LLMSS_Admin', 'administrator' );
+define( 'LLMSS_Author', 'instructor' );
 
 /**
  * Lifter LMS Stats main class
@@ -45,9 +50,6 @@ class Lifter_LMS_Stats{
 	/** @var Lifter_LMS_Stats_Admin Instance */
 	public $admin;
 
-	/** @var Lifter_LMS_Stats_Public Instance */
-	public $public;
-
 	/**
 	 * Return class instance
 	 * @return Lifter_LMS_Stats instance
@@ -73,8 +75,9 @@ class Lifter_LMS_Stats{
 		self::$path    = plugin_dir_path( $file );
 		self::$version = '1.0.0';
 
+		define( 'LLMSS_PATH', self::$path );
+
 		$this->_admin(); //Initiate admin
-		$this->_public(); //Initiate public
 
 	}
 
@@ -87,18 +90,8 @@ class Lifter_LMS_Stats{
 
 		//Enqueue admin end JS and CSS
 		add_action( 'admin_enqueue_scripts',	array( $this->admin, 'enqueue' ) );
-
-	}
-
-	/**
-	 * Initiates public class and adds public hooks
-	 */
-	private function _public() {
-		//Instantiating public class
-		$this->public = Lifter_LMS_Stats_Public::instance();
-
-		//Enqueue front end JS and CSS
-		add_action( 'wp_enqueue_scripts',	array( $this->public, 'enqueue' ) );
+		// Register widgets
+		add_action( 'wp_dashboard_setup', array( $this->admin, 'wp_dashboard_setup' ) );
 
 	}
 }
