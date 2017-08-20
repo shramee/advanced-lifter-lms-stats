@@ -97,6 +97,21 @@ class Lifter_LMS_Stats_Admin {
 		<?php
 	}
 
+	public function payment_endpoint() {
+		if ( ! empty( $_GET['request'] ) ) {
+			if ( method_exists( $this, "payment_endpoint_$_GET[request]" ) ) {
+				$method = "payment_endpoint_$_GET[request]";
+				$this->$method();
+			}
+		}
+	}
+
+	private function payment_endpoint_paid() {
+		if ( ! empty( $_GET['user'] ) && ! empty( $_GET['amount'] ) ) {
+			update_user_meta( $_GET['user'], 'llmss_paid_' . date( 'Ymd' ), $_GET['amount'] );
+		}
+	}
+
 	function save_user_fields( $user_id ) {
 		if ( !current_user_can( 'edit_user', $user_id ) ) {
 			return false;

@@ -16,8 +16,12 @@ require 'inc/class-widget-admin.php';
 /** Author widget class */
 require 'inc/class-widget-author.php';
 
+/** Admin role */
 define( 'LLMSS_Admin', 'administrator' );
+/** Author role */
 define( 'LLMSS_Author', 'instructor' );
+/** Share percentage */
+define( 'LLMSS_Share', 0.7 );
 
 /**
  * Lifter LMS Stats main class
@@ -93,8 +97,14 @@ class Lifter_LMS_Stats{
 
 		//Enqueue admin end JS and CSS
 		add_action( 'admin_enqueue_scripts',	[ $this->admin, 'enqueue' ] );
+
+		//Enqueue admin end JS and CSS
+		add_action( 'admin_ajax_llmss_payment',	[ $this->admin, 'payment_endpoint' ] );
+		add_action( 'admin_ajax_nopriv_llmss_payment',	[ $this->admin, 'payment_endpoint' ] );
+
 		// Register widgets
 		add_action( 'wp_dashboard_setup', [ $this->admin, 'wp_dashboard_setup' ] );
+
 		// Add custom user fields for paypal etc.
 		add_action( 'show_user_profile', [ $this->admin, 'user_fields' ] );
 		add_action( 'edit_user_profile', [ $this->admin, 'user_fields' ] );
@@ -115,8 +125,24 @@ class Lifter_LMS_Stats{
 	}
 
 	public function log_page_views() {
-		//@TODO Dynamically generate options by user course and date.
-		$this->increment_option( 'llmss-' );
+		global $post;
+		/** @var WP_Post $p */
+		$p = $post;
+
+		if ( is_singular( 'course' ) && $p->post_author != get_current_user_id() ) {
+			// Daily course visit counter
+			$this->increment_option( 'llmss-' . date( 'Ymd' ) );
+			// Daily counter by author
+			$this->increment_option( 'llmss-' . date( 'Ymd' ) . '-' . $p->post_author );
+			// Daily counter by course
+			$this->increment_option( 'llmss-' . date( 'Ymd' ) . '-' . $p->ID );
+			// Monthly course visit counter
+			$this->increment_option( 'llmss-' . date( 'Ym' ) );
+			// Monthly counter by author
+			$this->increment_option( 'llmss-' . date( 'Ym' ) . '-' . $p->post_author );
+			// Monthly counter by course
+			$this->increment_option( 'llmss-' . date( 'Ym' ) . '-' . $p->ID );
+		}
 	}
 }
 
