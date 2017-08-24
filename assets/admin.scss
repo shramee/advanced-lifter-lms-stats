@@ -6,6 +6,13 @@
  */
 
 #lifter-lms-stats {
+
+	.inside h3 {
+		padding:  0.5em;
+		margin: 1.6em 0 0;
+		border-bottom: 1px solid #eee;
+	}
+
 	table {
 		width: 100%;
 		border-spacing: 0;
@@ -13,13 +20,21 @@
 		margin: 1em auto;
 	}
 
-	.stats tr:last-of-type td {
+	.stats tr:last-of-type td,
+	.stats.second-last-row tr:nth-last-of-type(2) td {
 		background: #eee;
+	}
+
+	img, input[type='image'] {
+		vertical-align: middle;
+		height: 34px;
+		width:auto;
 	}
 
 	th, td {
 		margin: 0;
 		padding: 0.5em 1em;
 		border: 1px solid #ccc;
+		vertical-align: middle;
 	}
 }

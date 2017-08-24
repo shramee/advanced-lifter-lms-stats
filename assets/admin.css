@@ -4,16 +4,26 @@
  * @package Lifter_LMS_Stats
  * @version 1.0.0
  */
+#lifter-lms-stats .inside h3 {
+  padding: 0.5em;
+  margin: 1.6em 0 0;
+  border-bottom: 1px solid #eee; }
 #lifter-lms-stats table {
   width: 100%;
   border-spacing: 0;
   border-collapse: collapse;
   margin: 1em auto; }
-#lifter-lms-stats .stats tr:last-of-type td {
+#lifter-lms-stats .stats tr:last-of-type td,
+#lifter-lms-stats .stats.second-last-row tr:nth-last-of-type(2) td {
   background: #eee; }
+#lifter-lms-stats img, #lifter-lms-stats input[type='image'] {
+  vertical-align: middle;
+  height: 34px;
+  width: auto; }
 #lifter-lms-stats th, #lifter-lms-stats td {
   margin: 0;
   padding: 0.5em 1em;
-  border: 1px solid #ccc; }
+  border: 1px solid #ccc;
+  vertical-align: middle; }
 
 /*# sourceMappingURL=admin.css.map */

@@ -20,6 +20,8 @@ require 'inc/class-widget-author.php';
 define( 'LLMSS_Admin', 'administrator' );
 /** Author role */
 define( 'LLMSS_Author', 'instructor' );
+/** Admin Email */
+define( 'LLMSS_ADMIN_EMAIL', 'shramee.srivastav@gmail.com' );
 /** Share percentage */
 define( 'LLMSS_Share', 0.7 );
 
@@ -99,8 +101,7 @@ class Lifter_LMS_Stats{
 		add_action( 'admin_enqueue_scripts',	[ $this->admin, 'enqueue' ] );
 
 		//Enqueue admin end JS and CSS
-		add_action( 'admin_ajax_llmss_payment',	[ $this->admin, 'payment_endpoint' ] );
-		add_action( 'admin_ajax_nopriv_llmss_payment',	[ $this->admin, 'payment_endpoint' ] );
+		add_action( 'wp_ajax_llmss_ajax',	[ $this->admin, 'ajax_handler' ] );
 
 		// Register widgets
 		add_action( 'wp_dashboard_setup', [ $this->admin, 'wp_dashboard_setup' ] );

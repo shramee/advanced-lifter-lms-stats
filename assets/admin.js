@@ -11,4 +11,12 @@ jQuery(function ($) {
 
 	$('#dashboard-widgets').prepend( $widget )
 
+	$('body').on( 'submit', 'form.llmss-paypal', function() {
+		var $t = $( this );
+		$.post( llmss_data.ajaxUrl + '?action=llmss_ajax&request=paid', {
+			amount: $t.find( '[name="amount"]' ).val(),
+			payee: $t.data( 'payee' ),
+		} );
+	} );
+
 });

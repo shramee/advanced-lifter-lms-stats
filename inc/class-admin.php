@@ -75,10 +75,18 @@ class Lifter_LMS_Stats_Admin {
 	 */
 	public function enqueue() {
 		$token = $this->token;
-		$url = $this->url;
+		$url   = $this->url;
 
 		wp_enqueue_style( $token . '-css', $url . '/assets/admin.css' );
 		wp_enqueue_script( $token . '-js', $url . '/assets/admin.js', array( 'jquery' ) );
+
+		wp_localize_script( $token . '-js', 'llmss_data', [
+			'user'    => wp_get_current_user()->ID,
+			'start'   => ! empty( $_GET['start'] ) ? $_GET['start'] : date( 'Y-m' ) . '-01',
+			'end'     => ! empty( $_GET['end'] ) ? $_GET['end'] : date( 'Y-m-d' ),
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		] );
+
 	}
 
 	function user_fields( $user ) {
@@ -97,18 +105,46 @@ class Lifter_LMS_Stats_Admin {
 		<?php
 	}
 
-	public function payment_endpoint() {
-		if ( ! empty( $_GET['request'] ) ) {
-			if ( method_exists( $this, "payment_endpoint_$_GET[request]" ) ) {
-				$method = "payment_endpoint_$_GET[request]";
+	public function ajax_handler() {
+		if ( isset( $_GET['request'] ) ) {
+			$method = "ajax_handler_$_GET[request]";
+			if ( method_exists( $this, $method ) ) {
 				$this->$method();
 			}
 		}
 	}
 
-	private function payment_endpoint_paid() {
-		if ( ! empty( $_GET['user'] ) && ! empty( $_GET['amount'] ) ) {
-			update_user_meta( $_GET['user'], 'llmss_paid_' . date( 'Ymd' ), $_GET['amount'] );
+	private function ajax_handler_request_payment() {
+		$user = wp_get_current_user();
+
+		$site = get_bloginfo( 'name' );
+		$site_url = site_url();
+
+		$pay_url = admin_url( "?user=$user->ID" );
+
+		$success = wp_mail( LLMSS_ADMIN_EMAIL, $user->display_name . ' requested payment', "
+		Hi from $site($site_url), <br> <br>
+
+		User <b>$user->display_name</b> requested payment. <br> <br>
+		
+		<a href='$pay_url'>Click here to pay now</a>.
+		" );
+
+		header( 'Location: ' . admin_url( '?payment_requested=' . $success ) );
+		die();
+	}
+
+	private function ajax_handler_paid() {
+		if ( ! empty( $_POST['payee'] ) && ! empty( $_POST['amount'] ) ) {
+			$id = "llmss_paid_$_POST[payee]_" . date( 'Ym' );
+
+			$val = get_option( $id, 0 );
+			if ( ! $val ) {
+				$val = 0;
+			}
+			$val += $_POST['amount'];
+
+			update_option( $id, $val, 'no' );
 		}
 	}
 

@@ -10,16 +10,19 @@ $end_date = $th->end_date();
 ?>
 <form>
 	<label>
-		Start
+		From:
 		<input type="date" name="start" value="<?php echo $start_date ?>">
 	</label>
+
 	<label>
-		End
+		To:
 		<input type="date" name="end" value="<?php echo $end_date ?>">
 	</label>
 
 	<input class="button button-primary" type="submit" value="Go">
 </form>
+
+<h3>Admin Stats</h3>
 
 <table class="stats">
 	<tr>
@@ -38,9 +41,9 @@ $end_date = $th->end_date();
 	foreach ( $authors as $a_id => $a ) {
 		$paypal_acc = get_user_meta( $a_id, 'paypal_acc', true );
 
-		$payment_form = '';
+		$payment_form = 'No Paypal account';
 		if ( $paypal_acc ) {
-			$payment_form = "<form action='https://www.paypal.com/cgi-bin/webscr' method='post'>
+			$payment_form = "<form class='llmss-paypal' action='https://www.paypal.com/cgi-bin/webscr' target='_blank' data-payee='{$a_id}' method='post'>
 					<input type='hidden' name='cmd' value='_xclick'>
 					<input type='hidden' name='business' value='$paypal_acc'>
 					<input type='hidden' name='item_name' value='Payment from $site_title'>
@@ -48,7 +51,7 @@ $end_date = $th->end_date();
 					<input type='hidden' name='amount' value='$a[due_pay]'>
 					<input type='hidden' name='no_shipping' value='0'>
 					<input type='hidden' name='no_note' value='1'>
-					<input type='hidden' name='currency_code' value='USD'>
+					<input type='hidden' name='currency_code' value='EUR'>
 					<input type='hidden' name='lc' value='US'>
 					<input type='hidden' name='bn' value='PP-BuyNowBF'>
 					<input type='image' src='https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_150x38.png' border='0' name='submit' alt='PayPal - The safer, easier way to pay online.'>

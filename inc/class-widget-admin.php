@@ -32,7 +32,7 @@ class Lifter_LMS_Stats_Admin_Widget {
 		$this->total_views           = get_option( 'llmss-' . date( 'Ym' ) );
 		$this->sale_by_product = $this->sale_by_product();
 
-		$this->subscriptions_revenue = $this->sale_by_product[1723]->amt;
+		$this->subscriptions_revenue = isset( $this->sale_by_product[1723] ) ? $this->sale_by_product[1723]->amt : 0;
 	}
 
 	/**
@@ -43,28 +43,42 @@ class Lifter_LMS_Stats_Admin_Widget {
 		if ( empty( $_GET['user'] ) ) {
 			require dirname( __FILE__ ) . '/../tpl/widget-admin.php';
 		} else {
+			$this->admin_user = $this->user;
+			$this->user = new WP_User( $_GET['user'] );
 			require dirname( __FILE__ ) . '/../tpl/widget-author-for-admin.php';
 		}
 	}
 
-	function user_paypal( $id = 0 ) {
+	/**
+	 * @param int $id
+	 * @param string $not_found
+	 *
+	 * @return mixed
+	 */
+	function user_paypal( $id = 0, $not_found = '' ) {
 		$id         = $id ? $id : $this->user->ID;
 		$paypal_acc = get_user_meta( $id, 'paypal_acc', true );
 		if ( $paypal_acc ) {
 			echo $paypal_acc;
 		} else {
-			echo 'Please <a href="' . admin_url( 'profile.php#paypal-info' ) . '">provide your paypal ID</a>.';
+			if ( $not_found ) {
+				echo $not_found;
+			} else {
+				echo 'Please <a href="' . admin_url( 'profile.php#paypal-info' ) . '">provide your paypal ID</a>.';
+			}
 		}
+		return $paypal_acc;
 	}
 
 	function sale_by_product() {
-
+		$start_date = $this->start_date();
+		$end_date = $this->end_date();
 		// Try grabbing cached copy
-		$result = get_transient( 'llmss_orders' );
+		$result = get_transient( "llmss_orders-$start_date-$end_date" );
 
 		if ( ! $result ) {
 			// If no cache
-			$orders          = $this->sale_orders();
+			$orders          = $this->sale_orders( $start_date, $end_date );
 			$result          = [];
 			$total_sale      = new stdClass();
 			$total_sale->amt = 0;
@@ -83,21 +97,21 @@ class Lifter_LMS_Stats_Admin_Widget {
 
 			$result['total'] = $total_sale;
 
-			// Set cache for a day
-			set_transient( 'llmss_orders', $result, DAY_IN_SECONDS );
+			// Set cache for an hour
+			set_transient( "llmss_orders-$start_date-$end_date", $result, HOUR_IN_SECONDS );
 		}
 
 		return $result;
 	}
 
-	function sale_orders( $args = array() ) {
+	function sale_orders( $start_date, $end_date, $args = array() ) {
 		global $wpdb;
 
 		return $wpdb->get_results(
 			sprintf(
 				$this->sale_orders_query(),
-				$this->start_date(),
-				$this->end_date()
+				$start_date,
+				$end_date
 			)
 		);
 	}
@@ -112,7 +126,7 @@ class Lifter_LMS_Stats_Admin_Widget {
 			"	JOIN {$wpdb->postmeta} AS amnt ON orders.ID = amnt.post_id" .
 			"	WHERE" .
 			"		orders.post_type = 'llms_order' AND" .
-			"		orders.post_date BETWEEN CAST( '%s' AS DATETIME ) and CAST( '%s' AS DATETIME ) AND" .
+			"		orders.post_date BETWEEN CAST( '%s 00:00:00' AS DATETIME ) and CAST( '%s 23:59:59' AS DATETIME ) AND" .
 			"		prodID.meta_key = '_llms_product_id' AND" .
 			"		amnt.meta_key = '_llms_total';";
 	}
@@ -177,16 +191,24 @@ class Lifter_LMS_Stats_Admin_Widget {
 				$totals['due_pay'] += $authors[ $course->post_author ]['due_pay'];
 			}
 
-			if ( ! empty( $sales[ $course->ID ] ) ) {
-				$authors[ $course->post_author ]['sells'] += $sales[ $course->ID ]->qty;
-				$authors[ $course->post_author ]['sale_income']  += $sales[ $course->ID ]->amt * LLMSS_Share;
-				$authors[ $course->post_author ]['total_pay']  += $sales[ $course->ID ]->amt * LLMSS_Share;
-				$authors[ $course->post_author ]['due_pay']  += $sales[ $course->ID ]->amt * LLMSS_Share;
+			$sale_qty = 0;
+			$sale_amt = 0;
 
-				$totals['sells'] += $sales[ $course->ID ]->qty;
-				$totals['sale_income']  += $sales[ $course->ID ]->amt * LLMSS_Share;
-				$totals['total_pay']  += $sales[ $course->ID ]->amt * LLMSS_Share;
-				$totals['due_pay']  += $sales[ $course->ID ]->amt * LLMSS_Share;
+			if ( isset( $sales[ $course->ID ] ) ) {
+				$sale_qty = $sales[ $course->ID ]->qty;
+				$sale_amt = $sales[ $course->ID ]->amt;
+			}
+
+			if ( ! empty( $sales[ $course->ID ] ) ) {
+				$authors[ $course->post_author ]['sells'] += $sale_qty;
+				$authors[ $course->post_author ]['sale_income']  += $sale_amt * LLMSS_Share;
+				$authors[ $course->post_author ]['total_pay']  += $sale_amt * LLMSS_Share;
+				$authors[ $course->post_author ]['due_pay']  += $sale_amt * LLMSS_Share;
+
+				$totals['sells'] += $sale_qty;
+				$totals['sale_income']  += $sale_amt * LLMSS_Share;
+				$totals['total_pay']  += $sale_amt * LLMSS_Share;
+				$totals['due_pay']  += $sale_amt * LLMSS_Share;
 			}
 
 			$authors[ $course->post_author ]['courses'] ++;
@@ -211,42 +233,91 @@ class Lifter_LMS_Stats_Admin_Widget {
 		global $post;
 
 		$totals = [
-			'course'      => 0,
-			'views'       => 0,
-			'royalties'   => 0,
-			'sells'       => 0,
-			'sale_income' => 0,
-			'total_pay'   => 0,
-			'due_pay'     => 0,
+			'title'   => 'Total',
+			'views'   => 0,
+			'royalty' => 0,
+			'sells'   => 0,
+			'price'   => 0,
+			'sale'    => 0,
+			'total_pay' => 0,
 		];
+
+		$prices = $this->course_pricing( wp_list_pluck( $courses_query->posts, 'ID' ) );
 
 		while ( $courses_query->have_posts() ) {
 			$courses_query->the_post();
 			/** @var WP_Post $course */
 			$course = $post;
-			$views = $this->course_views( $course->ID );
+			$id = $course->ID;
+			$views = $this->course_views( $id );
 			$royalty = $this->royalty_by_views( $views );
 
 			$qty = 0;
 			$sale = 0;
-			if ( isset( $sales[ $course->ID ] ) ) {
-				$qty = $sales[ $course->ID ]->qty;
-				$sale = $sales[ $course->ID ]->amt;
+			if ( isset( $sales[ $id ] ) ) {
+				$qty = $sales[ $id ]->qty;
+				$sale = $sales[ $id ]->amt;
 			}
 
-			$courses[] = [
+			$course_info = [
 				'title' => $course->post_title,
 				'views' => $views,
 				'royalty' => $royalty,
 				'sells' => $qty,
-				'price' => '',
+				'price' => $prices[ $id],
 				'sale' => $sale * LLMSS_Share,
-				'total_pay' => '',
-				'due_pay' => '',
 			];
+
+			$course_info['total_pay'] = $course_info['royalty'] + $course_info['sale'];
+
+			$totals['royalty'] += $course_info['royalty'];
+			$totals['sells'] += $course_info['sells'];
+			$totals['sale'] += $course_info['sale'];
+			$totals['total_pay'] += $course_info['total_pay'];
+
+			$courses[ $course->ID ] = $course_info;
 		}
 
+		$courses[''] = $totals;
+
 		return $courses;
+	}
+
+	public function course_pricing( $products = [] ) {
+		global $wpdb;
+
+		$products = implode( "','", $products );
+
+		$prices = get_transient( "llmss_prices-$products" );
+
+		if ( ! $prices ) {
+			$products_query = '';
+			if ( $products ) {
+				$products_query = "AND pm1.meta_value IN ( '$products' )";
+			}
+
+			$query = <<<SQL
+SELECT pm1.meta_value as product, pm2.meta_value as price
+FROM $wpdb->postmeta as pm1
+JOIN $wpdb->postmeta as pm2 ON pm1.post_id = pm2.post_id
+WHERE pm1.meta_key = '_llms_product_id'
+AND pm2.meta_key = '_llms_price'
+$products_query
+AND pm2.meta_value NOT LIKE 0;
+SQL;
+
+			$results = $wpdb->get_results( $query );
+
+			$prices = [];
+
+			foreach ( $results as $r ) {
+				$prices[ $r->product ] = $r->price;
+			}
+
+			set_transient( "llmss_prices-$products", $prices, DAY_IN_SECONDS );
+		}
+
+		return $prices;
 	}
 
 	public function author_views( $id = 0 ) {
@@ -262,11 +333,13 @@ class Lifter_LMS_Stats_Admin_Widget {
 	public function author_paid( $id = 0 ) {
 		$id = $id ? $id : $this->user->ID;
 
-		// @TODO Get paid amount
-		return 0;
+		$paid = get_option( "llmss_paid_{$id}_" . date( 'Ym' ) );
+
+		return $paid ? $paid : 0;
 	}
 
 	public function royalty_by_views( $views ) {
-		return round( $this->subscriptions_revenue * LLMSS_Share * $views / $this->total_views - 0.001, 2 );
+		$royalty_float = $this->subscriptions_revenue * LLMSS_Share * $views / $this->total_views;
+		return round( $royalty_float ? $royalty_float - 0.001 : 0, 2 );
 	}
 }
