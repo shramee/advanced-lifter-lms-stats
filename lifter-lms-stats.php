@@ -19,7 +19,7 @@ require 'inc/class-widget-author.php';
 /** Admin role */
 define( 'LLMSS_Admin', 'administrator' );
 /** Author role */
-define( 'LLMSS_Author', 'instructor' );
+define( 'LLMSS_Author', 'author' );
 /** Admin Email */
 define( 'LLMSS_ADMIN_EMAIL', 'shramee.srivastav@gmail.com' );
 /** Share percentage */
