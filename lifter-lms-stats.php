@@ -21,7 +21,7 @@ define( 'LLMSS_Admin', 'administrator' );
 /** Author role */
 define( 'LLMSS_Author', 'author' );
 /** Admin Email */
-define( 'LLMSS_ADMIN_EMAIL', 'shramee.srivastav@gmail.com' );
+define( 'LLMSS_ADMIN_EMAIL', 'payments@wixbu.com' );
 /** Share percentage */
 define( 'LLMSS_Share', 0.7 );
 
